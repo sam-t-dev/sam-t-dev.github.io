@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mission Control • Sam Tonin</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600&display=swap');
+        body { font-family: 'Inter', system-ui, sans-serif; }
+        .title { font-family: 'Space Grotesk', sans-serif; }
+        .card { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .card:hover { transform: translateY(-4px); box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1); }
+        .map-placeholder {
+            background: linear-gradient(45deg, #1e2937, #334155);
+            background-size: 400% 400%;
+            animation: gradient 15s ease infinite;
+        }
+        @keyframes gradient { 0% {background-position:0% 50%} 50% {background-position:100% 50%} 100% {background-position:0% 50%} }
+        .task-item { transition: all 0.2s; }
+    </style>
+</head>
+<body class="bg-zinc-950 text-zinc-200">
+    <div class="max-w-screen-2xl mx-auto">
+        <!-- Header -->
+        <div class="border-b border-zinc-800 bg-zinc-900 sticky top-0 z-50">
+            <div class="px-8 py-5 flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div class="w-9 h-9 bg-gradient-to-br from-blue-500 to-violet-600 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-inner">⚡</div>
+                    <div>
+                        <h1 class="title text-4xl font-semibold tracking-tighter text-white">Mission Control</h1>
+                        <p class="text-xs text-zinc-500 -mt-1">Sam Tonin • <span id="current-date"></span></p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-6 text-sm">
+                    <div onclick="refreshDashboard()" class="flex items-center gap-2 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 px-5 py-2 rounded-3xl cursor-pointer transition-colors">
+                        <i class="fa-solid fa-sync text-xs"></i>
+                        <span class="font-medium">Refresh</span>
+                    </div>
+                    <div class="px-4 py-1.5 rounded-3xl bg-zinc-800 text-zinc-400 text-xs font-mono">v0.2 • OpenClaw</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-12 gap-6 p-8">
+            <!-- Left Column -->
+            <div class="col-span-12 lg:col-span-5 space-y-6">
+
+                <!-- Goals -->
+                <div class="card bg-zinc-900 border border-zinc-800 rounded-3xl p-6">
+                    <h2 class="text-lg font-semibold mb-5 flex items-center gap-3"><i class="fa-solid fa-bullseye text-amber-400"></i> Today's North Star (Wealth / Health / Peace)</h2>
+                    <div class="grid grid-cols-3 gap-4" id="goals-grid">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+
+                <!-- Tasks (synced from tasks.MD) -->
+                <div class="card bg-zinc-900 border border-zinc-800 rounded-3xl p-6">
+                    <div class="flex justify-between items-center mb-5">
+                        <h2 class="text-lg font-semibold flex items-center gap-3"><i class="fa-solid fa-list-check text-sky-400"></i> Active Tasks</h2>
+                        <button onclick="addTask()" 
+                                class="flex items-center gap-2 text-xs bg-zinc-800 hover:bg-zinc-700 px-4 py-2 rounded-2xl transition-colors">
+                            <i class="fa-solid fa-plus"></i> NEW TASK
+                        </button>
+                    </div>
+                    <div id="task-list" class="space-y-1 max-h-[340px] overflow-auto pr-2"></div>
+                </div>
+
+                <!-- Calendar -->
+                <div class="card bg-zinc-900 border border-zinc-800 rounded-3xl p-6">
+                    <h2 class="text-lg font-semibold mb-5 flex items-center gap-3"><i class="fa-solid fa-calendar-days text-violet-400"></i> Calendar Summary</h2>
+                    <div id="calendar-list" class="space-y-4 text-sm">
+                        <!-- Populated by JS / future GitHub Action -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="col-span-12 lg:col-span-7 space-y-6">
+
+                <!-- Hotspots Map -->
+                <div class="card bg-zinc-900 border border-zinc-800 rounded-3xl overflow-hidden h-full">
+                    <div class="px-6 py-4 border-b border-zinc-700 flex items-center justify-between bg-zinc-950">
+                        <h2 class="font-semibold flex items-center gap-3"><i class="fa-solid fa-location-dot text-rose-400"></i> Hotspots & Movement</h2>
+                        <span class="px-4 py-1 text-xs rounded-3xl bg-rose-500/10 text-rose-400 font-medium">UBER MODE • SYDNEY</span>
+                    </div>
+                    <div class="map-placeholder h-80 flex items-center justify-center relative">
+                        <div class="text-center z-10">
+                            <i class="fa-solid fa-map-location-dot text-7xl mb-6 text-white/10"></i>
+                            <p class="text-white/70 text-lg font-medium">High-Potential Pickup Zones</p>
+                            <p class="text-zinc-400 text-sm mt-2 max-w-xs">Central • Surry Hills • Bondi • Airport • Macquarie Park</p>
+                        </div>
+                        <div class="absolute bottom-6 left-6 text-[10px] bg-black/60 px-3 py-1 rounded-xl text-amber-300 flex items-center gap-2">
+                            <div class="w-2 h-2 bg-amber-400 rounded-full animate-pulse"></div>
+                            LIVE — 4 hotspots active
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Finance + Sub-Wealth -->
+                <div class="card bg-zinc-900 border border-zinc-800 rounded-3xl p-6">
+                    <h2 class="text-lg font-semibold mb-5 flex items-center gap-3"><i class="fa-solid fa-sack-dollar text-emerald-400"></i> Finance Snapshot + Sub-Wealth Advice</h2>
+                    <div class="grid grid-cols-12 gap-6">
+                        <div class="col-span-5">
+                            <div class="text-xs uppercase tracking-widest text-zinc-500 mb-1">Net Position</div>
+                            <div class="text-5xl font-semibold text-emerald-400" id="net-worth">$184,200</div>
+                            <div class="flex items-center gap-2 text-emerald-500 text-sm mt-2">
+                                <i class="fa-solid fa-arrow-trend-up"></i>
+                                <span>+2.8% this week</span>
+                            </div>
+                        </div>
+                        <div class="col-span-7 space-y-5">
+                            <div>
+                                <div class="flex justify-between text-xs mb-2">
+                                    <span class="text-zinc-400">Portfolio Health</span>
+                                    <span class="font-semibold text-emerald-400">83%</span>
+                                </div>
+                                <div class="h-2.5 bg-zinc-800 rounded-3xl overflow-hidden">
+                                    <div class="h-2.5 w-[83%] bg-gradient-to-r from-emerald-400 via-cyan-400 to-blue-400 rounded-3xl"></div>
+                                </div>
+                            </div>
+                            <div class="text-xs leading-relaxed text-amber-300 bg-zinc-950 border border-amber-900/50 p-4 rounded-2xl">
+                                <strong>Sub-Wealth Recommendation:</strong><br>
+                                Hold current positions. Consider adding 5-7% more into BTC if it retests $92k. Keep cash buffer above 18%.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Agent Status -->
+                <div class="card bg-zinc-900 border border-zinc-800 rounded-3xl p-6">
+                    <h2 class="text-lg font-semibold mb-4 flex items-center gap-3"><i class="fa-solid fa-robot text-sky-400"></i> Agent Fleet Status</h2>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                        <div class="bg-emerald-950 border border-emerald-900 text-emerald-300 rounded-3xl p-4 text-center text-sm font-medium">🧠 Main — Active</div>
+                        <div class="bg-emerald-950 border border-emerald-900 text-emerald-300 rounded-3xl p-4 text-center text-sm font-medium">💰 Sub-Wealth — Online</div>
+                        <div class="bg-blue-950 border border-blue-900 text-blue-300 rounded-3xl p-4 text-center text-sm font-medium">❤️ Sub-Health — Monitoring</div>
+                        <div class="bg-purple-950 border border-purple-900 text-purple-300 rounded-3xl p-4 text-center text-sm font-medium">🧘 Sub-Peace — Idle</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Tailwind script run
+        function initTailwind() {
+            tailwind.config = {
+                content: [],
+                theme: { extend: {} }
+            }
+        }
+
+        // Current date
+        function updateDate() {
+            const dateEl = document.getElementById('current-date');
+            const now = new Date();
+            dateEl.textContent = now.toLocaleDateString('en-GB', { weekday:'short', day:'numeric', month:'long', year:'numeric' });
+        }
+
+        // Goals data
+        const goals = [
+            { label: "WEALTH", progress: 89, color: "emerald" },
+            { label: "HEALTH", progress: 81, color: "blue" },
+            { label: "PEACE", progress: 94, color: "violet" }
+        ];
+
+        function renderGoals() {
+            const container = document.getElementById('goals-grid');
+            container.innerHTML = goals.map(g => `
+                <div class="bg-zinc-800/70 rounded-3xl p-5 text-center border border-zinc-700">
+                    <div class="text-4xl font-semibold text-${g.color}-400">${g.progress}%</div>
+                    <div class="text-xs tracking-[0.5px] text-zinc-400 mt-1">${g.label}</div>
+                    <div class="h-1.5 mt-4 bg-zinc-700 rounded-full overflow-hidden">
+                        <div class="h-1.5 bg-${g.color}-400 rounded-full" style="width: ${g.progress}%"></div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Tasks synced from tasks.MD (we will replace this array with JSON fetch in future GitHub Action version)
+        let tasks = [
+            { id: 1, text: "Implement configurable workspaceFiles for heartbeat (GitHub #20649)", done: false, priority: "high" },
+            { id: 2, text: "Test wp-rest-api skill connection on migrated GitHub Pages site", done: true, priority: "high" },
+            { id: 3, text: "Build daily auto-update GitHub Action for this Mission Control dashboard", done: false, priority: "high" },
+            { id: 4, text: "Get gogcli fully working for Calendar + Gmail", done: false, priority: "medium" },
+            { id: 5, text: "Research best iOS mobile companion dashboard", done: false, priority: "medium" }
+        ];
+
+        function renderTasks() {
+            const container = document.getElementById('task-list');
+            container.innerHTML = tasks.map((task, index) => `
+                <div onclick="toggleTask(${index})" class="task-item flex items-start gap-3 px-5 py-3.5 bg-zinc-800 hover:bg-zinc-700 rounded-2xl cursor-pointer group">
+                    <input type="checkbox" ${task.done ? 'checked' : ''} 
+                           class="mt-0.5 accent-sky-500 w-5 h-5">
+                    <div class="flex-1">
+                        <div class="${task.done ? 'line-through text-zinc-400' : 'text-zinc-100'}">${task.text}</div>
+                        ${task.priority === 'high' ? `<span class="inline-block mt-1 text-[10px] px-2 py-px bg-red-500/10 text-red-400 rounded">HIGH</span>` : ''}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        window.toggleTask = function(index) {
+            tasks[index].done = !tasks[index].done;
+            renderTasks();
+            // In production this would POST to a JSON file on the repo
+        }
+
+        window.addTask = function() {
+            const text = prompt("Enter new task:");
+            if (text && text.trim().length > 2) {
+                tasks.unshift({
+                    id: Date.now(),
+                    text: text.trim(),
+                    done: false,
+                    priority: "medium"
+                });
+                renderTasks();
+            }
+        }
+
+        function renderCalendar() {
+            const html = `
+                <div class="flex gap-4 bg-zinc-800/70 rounded-3xl p-5">
+                    <div class="w-14 text-right text-xs text-zinc-400 leading-tight">
+                        TODAY<br>
+                        <span class="block text-lg text-white font-medium">14:30</span>
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-medium">Weekly Review • Wealth + Peace alignment</div>
+                        <div class="text-xs text-zinc-400">45 min with Grok (main)</div>
+                    </div>
+                </div>
+                <div class="flex gap-4 bg-zinc-800/30 rounded-3xl p-5 opacity-75">
+                    <div class="w-14 text-right text-xs text-zinc-400 leading-tight">
+                        TOMORROW<br>
+                        <span class="block text-lg text-white font-medium">09:00</span>
+                    </div>
+                    <div class="flex-1">
+                        <div class="font-medium">Health metrics review + workout planning</div>
+                        <div class="text-xs text-zinc-400">Sub-Health session</div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('calendar-list').innerHTML = html;
+        }
+
+        window.refreshDashboard = function() {
+            const btns = document.querySelectorAll('.fa-sync');
+            if (btns.length) btns[0].classList.add('animate-spin');
+            setTimeout(() => {
+                if (btns.length) btns[0].classList.remove('animate-spin');
+                alert("✅ Dashboard refreshed.\n\n(In production this will pull latest tasks.MD + calendar via GitHub Action)");
+            }, 800);
+        }
+
+        // Init everything
+        function initialize() {
+            initTailwind();
+            updateDate();
+            renderGoals();
+            renderTasks();
+            renderCalendar();
+            console.log('%cMission Control v0.2 initialized — synced with tasks.MD', 'color:#22d3ee; font-family:monospace');
+        }
+
+        window.onload = initialize;
+    </script>
+</body>
+</html>
